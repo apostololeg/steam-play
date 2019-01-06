@@ -1,0 +1,67 @@
+.User
+    position relative
+    display flex
+    align-items center
+
+    &:after
+        content ''
+        position fixed
+        height 50px
+        width 50px
+        border-radius 50%
+        box-shadow inset 0 0 0 2px #000
+        transition all .1s ease-out
+        opacity 0
+        pointer-events none
+
+    &:hover
+    &_selected
+        &:after
+            opacity 1
+            transform scale(1.2)
+
+    &:hover &__delete
+    &_selected &__delete
+        margin-top -3px
+        margin-right -3px
+
+    &__avatar
+        height 50px
+        width 50px
+        transition transform .1s ease-out
+        border-radius 50%
+        overflow hidden
+        background-size 100%
+        background-color rgba(0,0,0,.3)
+        cursor pointer
+
+    &_selected &__avatar
+        transform scale(1.1)
+
+    &__delete
+        display flex
+        align-items center
+        justify-content center
+        position absolute
+        height 24px
+        width 24px
+        top -5px
+        right -5px
+        cursor pointer
+        background-color #fff
+        border-radius 50%
+        transition all .1s ease-out
+        z-index 1
+
+        &:hover
+            transform scale(1.1)
+
+    // &:hover
+    //     height 150px
+    //     transform translateY(-100px)
+
+    //     &__name
+    //         position absolute
+    //         left 0
+    //         top 0
+

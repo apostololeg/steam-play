@@ -1,0 +1,8 @@
+build/
+cache/
+node_modules/
+.directory
+.DS_Store
+.DS_Store?
+Thumbs.db
+*.log

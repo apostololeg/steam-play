@@ -1,0 +1,42 @@
+.SearchInput
+    display flex
+    align-items center
+    font-family 'Play-Regular'
+    border-radius 3px
+    border 2px solid rgba(0,0,0,.9)
+    transition box-shadow .2s ease-out
+
+    &_focused
+        box-shadow 0 0 50px rgba(0,0,0,.2)
+
+    &__input
+    &__button
+        appearance none
+        height 50px
+        padding 0 8px
+        box-sizing border-box
+        border 0
+        line-height 100%
+        font-family 'Play-Regular'
+        font-size 30px
+        outline none
+        wudth auto
+
+    &__input
+        flex-grow 1
+
+    &__button
+        width 50px
+        display flex
+        align-items center
+        justify-content center
+        transition transform .1s ease-out
+
+        &:hover
+            transform scale(1.1)
+
+    &__hint
+        height 20px
+        font-size 14px
+        color #ccc
+        background-color rgba(0,0,0,.7)

@@ -1,0 +1,86 @@
+@font-face
+    font-family 'Play-Regular'
+    src url('/fonts/Play-Regular.ttf')
+@font-face
+    font-weight bold
+    font-family 'Play-Bold'
+    src url('/fonts/Play-Bold.ttf')
+
+*
+    margin 0
+    padding 0
+    border 0
+
+.App
+    display flex
+    flex-direction column
+    height 100vh
+    max-width 1000px
+    padding 50px
+    margin 0 auto
+    box-sizing border-box
+    font-size 24px
+    font-family 'Play-Regular'
+
+    &__title
+        margin-bottom 50px
+
+    &__header
+        position relative
+
+    &__search
+        display flex
+        max-height 60px
+
+    &__spinner
+        margin-left 10px
+
+    &__error
+        width 100%
+        display flex
+        align-items center
+        justify-content center
+        padding 12px
+        box-sizing border-box
+        font-size 80%
+        background-color rgba(255,0,0,.2);
+
+    &__users
+        display flex
+        margin-top 30px
+        margin-left -5px
+
+    &__user
+        position relative
+        width 50px
+        max-width 50px
+        margin 5px 10px 5px 5px
+
+        &-playtime
+            pointer-events none
+            position absolute
+            height 100%
+            width 100%
+
+    &__games
+        margin-top 20px
+        margin-left -10px
+        align-items center
+
+        &-count
+            opacity .6
+            margin-top 20px
+
+    &__more
+        display inline-flex
+        height 50px
+        padding 8px 15px
+        box-sizing border-box
+        cursor pointer
+        vertical-align middle
+        transition all .1s ease-out
+
+        &:hover
+            opacity .7
+            transform scale(1.05);
+
