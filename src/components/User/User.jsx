@@ -21,6 +21,7 @@ function User({ data, selected, onClick, onDelete }) {
 }
 
 User.propTypes = {
+    selected: PropTypes.bool,
     onClick: PropTypes.func,
     onDelete: PropTypes.func,
     data: PropTypes.shape({

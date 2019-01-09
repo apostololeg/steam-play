@@ -62,8 +62,6 @@ function updateCommonGames(state, data = {}) {
     const games = usersNames.length === 1
         ? Object(state.users[usersNames[0]].games)
         : findCommonGames(state);
-    console.log('games', games);
-    debugger
     const maxPlayTime = Object.values(state.games).reduce(
         (acc, game) => Math.max(acc, game.playtime),
         0
@@ -121,7 +119,8 @@ class App extends Component {
             ...state,
             ...updateCommonGames({ ...state, games }, data),
             selectedGame: null,
-            selectedUser: null
+            selectedUser: null,
+            pageCount: 1
         });
         // TODO: Save state to LocalStorage!
     }
@@ -159,7 +158,7 @@ class App extends Component {
                 this.saveUserData(username, data, { loading: false });
             })
             .catch(error => {
-                const msg = error.message || Object(error.response).data;
+                const msg = Object(error.response).data || error.message;
 
                 err(msg);
                 debugger
