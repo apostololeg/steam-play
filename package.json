@@ -8,7 +8,7 @@
     "build": "NODE_ENV=production webpack --color --progress",
     "build:dev": "NODE_ENV=development webpack --color --progress",
     "build:watch": "webpack-dev-server --mode=development  --color --progress",
-    "server": "NODE_ENV=production babel-node src/server/index.js",
+    "server": "NODE_ENV=production babel-node --max-old-space-size=16384 src/server/index.js",
     "server:dev": "NODE_ENV=development nodemon -w src src/index.js --exec 'babel-node --max-old-space-size=16384 --inspect src/server/index.js'",
     "start": "npm run build && npm run server",
     "start:dev": "concurrently \"npm:build:watch\" \"npm:server:dev\""

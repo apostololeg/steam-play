@@ -133,7 +133,8 @@ class App extends Component {
     }
 
     @bind
-    async onSearch(username) {
+    async onSearch(userName) {
+        const username = userName.trim().replace(/^@/, '');
         const { users, games } = this.state;
         const err = error => this.setState({ error, loading: false });
 
@@ -156,8 +157,10 @@ class App extends Component {
                 this.saveUserData(username, data, { loading: false });
             })
             .catch(({ response, message }) => {
-                if (response) {
-                    err(Object(response.data).error);
+                const { data } = response;
+
+                if (data) {
+                    err(typeof data === 'string' ? data : data.error);
                     return;
                 }
 
