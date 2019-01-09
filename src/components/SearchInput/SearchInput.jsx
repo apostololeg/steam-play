@@ -38,6 +38,8 @@ class SearchInput extends Component {
     onRef(el) {
         // const { onRef } = this.props;
 
+        if (this.inputRef || !el) return;
+
         this.inputRef = el;
         this.inputRef.focus();
 

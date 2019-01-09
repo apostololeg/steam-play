@@ -136,7 +136,6 @@ class App extends Component {
     async onSearch(username) {
         const { users, games } = this.state;
         const err = error => this.setState({ error, loading: false });
-        let res;
 
         if (!username || users[username]) {
             console.log('username', username, users[username]);
@@ -151,17 +150,18 @@ class App extends Component {
             .then(({ error, data }) => {
                 if (error) {
                     err(error);
-                    debugger
                     return;
                 }
 
                 this.saveUserData(username, data, { loading: false });
             })
-            .catch(error => {
-                const msg = Object(error.response).data || error.message;
+            .catch(({ response, message }) => {
+                if (response) {
+                    err(Object(response.data).error);
+                    return;
+                }
 
-                err(msg);
-                debugger
+                err(message);
                 console.error(error);
             });
     }

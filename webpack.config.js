@@ -88,8 +88,8 @@ const config = {
     plugins: [
         clear('build'),
         extractStyles(),
-        favicon(),
         html({ icon: true }),
+        favicon(),
         new CopyWebpackPlugin([
             {
                 from: assetsPath,
