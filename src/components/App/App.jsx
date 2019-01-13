@@ -22,21 +22,33 @@ function findCommonGames({ users, games }) {
     const gameIds = usersList.reduce((acc, user) => (
         {
             ...acc,
-            [user.username]: Object.keys(user.games)
+            [user.userName]: Object.keys(user.games)
         }
     ), {});
 
-    const commonGamesData = usersNames.reduce((acc, username) => {
-        gameIds[username].forEach(appid => {
+    const commonGamesData = usersNames.reduce((acc, userName) => {
+        if (!gameIds[userName]) {
+            debugger
+        }
+
+        gameIds[userName].forEach(appid => {
             const isGameCommon = usersNames.every(
-                un => gameIds[un].indexOf(appid) > -1
+                un => {
+                    const userGmaesIds = gameIds[un];
+
+                    if (!userGmaesIds) {
+                        debugger
+                    }
+
+                    return userGmaesIds.indexOf(appid) > -1;
+                }
             );
 
             if (isGameCommon) {
                 if (acc[appid]) {
                     acc[appid].count++;
                 } else {
-                    acc[appid] = { count: 1, username };
+                    acc[appid] = { count: 1, userName };
                 }
             }
         });
@@ -45,10 +57,10 @@ function findCommonGames({ users, games }) {
     }, {});
 
     const commonGames = Object.keys(commonGamesData).reduce((acc, appid) => {
-        const { count, username } = commonGamesData[appid];
+        const { count, userName } = commonGamesData[appid];
 
         if (count === usersNames.length) {
-            acc[appid] = users[username].games[appid];
+            acc[appid] = users[userName].games[appid];
         }
 
         return acc;
@@ -65,7 +77,7 @@ function updateCommonGames(state, data = {}) {
         ? Object(state.users[usersNames[0]].games)
         : findCommonGames(state);
     const maxPlayTime = Object.values(state.games).reduce(
-        (acc, game) => Math.max(acc, game.playtime),
+        (acc, game) => Math.max(acc, game.playTime),
         0
     );
 
@@ -77,9 +89,9 @@ class App extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            // game's ids by username
+            // game's ids by userName
             users: {
-                // [username]: {
+                // [userName]: {
                 //     appid,
                 //     playtime_forever,
                 //     name,
@@ -105,13 +117,13 @@ class App extends Component {
         };
     }
 
-    saveUserData(username, data, moreState) {
+    saveUserData(userName, data, moreState) {
         const { users, games } = this.state;
         const state = {
             users: {
                 ...users,
-                [username]: {
-                    ...users[username],
+                [userName]: {
+                    ...users[userName],
                     ...data
                 }
             },
@@ -163,28 +175,26 @@ class App extends Component {
     }
 
     @bind
-    async onSearch(userName) {
-        const username = userName.trim().replace(/^@/, '');
+    async onSearch(username) {
+        const userName = username.toLowerCase().trim().replace(/^@/, '');
         const { users, games } = this.state;
         const err = error => this.setState({ error, loading: false });
 
-        if (!username || users[username]) {
-            console.log('username', username, users[username]);
+        if (!userName || users[userName]) {
+            console.log('userName', userName, users[userName]);
             return
         }
 
-        await new Promise(resolve =>
-            this.setState({ loading: true }, resolve)
-        );
+        await new Promise(resolve => this.setState({ loading: true }, resolve));
 
-        axios.get(`user/${username}`)
+        axios.get(`user/${userName}`)
             .then(({ error, data }) => {
                 if (error) {
                     err(error);
                     return;
                 }
 
-                this.saveUserData(username, data, { loading: false });
+                this.saveUserData(userName, data, { loading: false });
             })
             .catch(({ response, message }) => {
                 if (message) {
@@ -304,14 +314,14 @@ class App extends Component {
             <div styleName="App__subtitle">Team</div>
             <div styleName="App__users">
                 {usersList.map(data => {
-                    const { username } = data;
+                    const { userName } = data;
 
                     return (
-                        <div styleName="App__user" key={username}>
+                        <div styleName="App__user" key={userName}>
                             <User data={data}
-                                selected={selectedUser === username}
-                                onClick={() => this.toggleUser(username)}
-                                onDelete={() => this.deleteUser(username)}
+                                selected={selectedUser === userName}
+                                onClick={() => this.toggleUser(userName)}
+                                onDelete={() => this.deleteUser(userName)}
                             />
                             <div styleName="App__user-playtime" />
                         </div>
@@ -338,16 +348,14 @@ class App extends Component {
                 {owner} games – {gamesList.length}
             </div>
             <div styleName="App__games">
-                {list.length > 0 && list.map(data => {
-                    const { appid } = data;
-
-                    return <Game styleName="App__game"
-                        data={data}
+                {list.length > 0 && list.map(({ appid }) => (
+                    <Game
+                        appid={appid}
                         selected={selectedGame === appid}
                         onClick={() => this.toggleGame(appid)}
                         key={appid}
-                     />;
-                })}
+                    />
+                ))}
                 {showMore &&
                     <div styleName="App__more" onClick={this.onClickMore}>
                         more games...
@@ -360,30 +368,29 @@ class App extends Component {
     render() {
         const { overscrolled } = this.state;
         const usersSectionClasses = cn(
-            styles.App__section,
-            styles.App__section_users,
-            overscrolled && styles['App__section_border-bottom']
+            'App__section_users',
+            overscrolled && 'App__section_border-bottom'
         );
 
         return <div styleName="App" onScroll={this.onScroll} ref={this.onRef}>
-            <div styleName="App__section App__section_header">
+            <div>
                 <div styleName="App__content">
                     <h1 styleName="App__title">
                         Find games and play together
                     </h1>
                 </div>
             </div>
-            <div styleName="App__section App__section_search">
+            <div>
                 <div styleName="App__content">
                     {this.renderSearch()}
                 </div>
             </div>
-            <div className={usersSectionClasses}>
+            <div styleName={usersSectionClasses}>
                 <div styleName="App__content">
                     {this.renderUsersList()}
                 </div>
             </div>
-            <div styleName="App__section App__section_games">
+            <div>
                 <div styleName="App__content">
                     {this.renderGames()}
                 </div>

@@ -8,7 +8,6 @@ import styles from './Svg.module.styl';
 function Svg({ name, styleName, height, width, ...props }) {
     const styles = cn({
         Svg: true,
-        [`Svg_name_${name}`]: true,
         Svg_clickable: Boolean(props.onClick),
         [styleName]: Boolean(styleName)
     });

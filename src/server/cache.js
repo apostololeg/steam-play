@@ -5,62 +5,73 @@ import CircularJSON from 'circular-json';
 import jsonfile from 'jsonfile';
 import API from './api';
 
-const RUN_ON_INIT = true;
+const RUN_ON_INIT = false;
 const CACHE_FILE = './cache/index.json';
 let FILE_DATA = {
     users: {},
     games: {}
 };
 
-class Cache {
-    get(field, filter) {
-        const cache = FILE_DATA[field];
+function get(field, filter) {
+    const cache = FILE_DATA[field];
 
-        if (filter) {
-            const res = Object.keys(cache).reduce((acc, key) => {
-                const data = cache[key];
-                const match = Object.keys(filter)
-                    .every(field => filter[field] === data[field]);
+    if (filter) {
+        const res = Object.keys(cache).reduce((acc, key) => {
+            const data = cache[key];
+            const match = Object.keys(filter)
+                .every(field => filter[field] === data[field]);
 
-                if (match) {
-                    acc[key] = data;
-                }
+            if (match) {
+                acc[key] = data;
+            }
 
-                return acc;
-            }, {});
+            return acc;
+        }, {});
 
-            return Object.keys(res).length === 0 ? null : res;
-        }
-
-        return cache;
+        return Object.keys(res).length === 0 ? null : res;
     }
 
-    update(field, data) {
-        jsonfile.readFile(CACHE_FILE, (err, fileData) => {
-            if (err) throw err;
-
-            const dataStr = CircularJSON.stringify({
-                ...fileData,
-                [field]: {
-                    ...fileData[field],
-                    ...data
-                }
-            });
-
-            FILE_DATA = JSON.parse(dataStr);
-
-            jsonfile.writeFile(CACHE_FILE, fileData,
-                err => {
-                    if (err) throw err;
-                    console.log('CACHE: updated', new Date());
-                }
-            );
-        });
-    }
+    return cache;
 }
 
+function update(type, data) {
+    // TODO: check memory usage
+    // // newData));
+    FILE_DATA[type] = JSON.parse(CircularJSON.stringify({
+        ...FILE_DATA[type],
+        ...data
+    }));
+
+    jsonfile.writeFile(CACHE_FILE, FILE_DATA,
+        err => {
+            if (err) throw err;
+            console.log('CACHE: updated', new Date());
+        }
+    );
+}
+
+function updateItem(type, field, data) {
+    const cache = FILE_DATA[type];
+    const newData = {
+        ...cache,
+        [field]: {
+            ...cache[field],
+            ...data
+        }
+    };
+
+    update(type, newData);
+}
+
+
+// load cache from file
+jsonfile.readFile(CACHE_FILE, (err, fileData) => {
+    if (err) throw err;
+    FILE_DATA = fileData;
+});
+
+// plan job to update cache of multiplayer games
 (function runJob() {
-    const cache = new Cache();
     // update every day in 14:55
     cron.job('55 14 * * *', async () => {
         const res = await API.Spy.get('multiplayerGames');
@@ -71,8 +82,13 @@ class Cache {
             return;
         }
 
-        cache.update('games', data);
+        const newGamesData = {
+            ...FILE_DATA.games,
+            ...data
+        };
+
+        update('games', newGamesData);
     }, null, null,  null,  null, RUN_ON_INIT);
 })();
 
-export default Cache;
+export default { get, update, updateItem };

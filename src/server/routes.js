@@ -1,8 +1,6 @@
 import API from './api';
 import jsonfile from 'jsonfile';
-import Cache from './cache';
-
-const CACHE = new Cache();
+import CACHE from './cache';
 
 async function getUserData(username) {
     // const userCache = CACHE.get('users', { username });
@@ -57,17 +55,17 @@ async function getUserData(username) {
 
 const ROUTES = {
     '/user/:username': async function(req, res) {
-        const { username } = req.params;
+        const userName = req.params.username.toLowerCase();
         const sendError = error => res.status(404).send({ error });
 
-        console.log('requiested', `/user/${username}`);
+        console.log('requiested', `/user/${userName}`);
 
-        if (!username) {
-            sendError('Please, specify /games/{username}.');
+        if (!userName) {
+            sendError('Please, specify /games/{userName}.');
             return;
         }
 
-        const userData = await getUserData(username);
+        const userData = await getUserData(userName);
 
         if (!userData) {
             sendError('Error request user personal data.');
@@ -85,22 +83,37 @@ const ROUTES = {
             return;
         }
 
+        delete userData.username;
+        userData.userName = userName;
         userData.games = ownGames.reduce((acc, game) => {
             const {
                 appid,
-                playtime_forever: playtime,
+                playtime_forever: playTime,
                 img_icon_url: icon
             } = game;
-            const mGame = CACHE.get('games', { appid });
 
-            if (mGame) {
-                acc[appid] = { ...mGame[appid], playtime, icon };
+            const mGamesRes = CACHE.get('games', { appid });
+
+            if (mGamesRes) {
+                const mGame = mGamesRes[appid];
+
+                if (!mGame.icon) {
+                    CACHE.updateItem('games', appid, { icon });
+                }
+
+                acc[appid] = { appid, playTime };
             }
 
             return acc;
         }, {});
 
         res.status(200).send(userData);
+    },
+    '/game/:appid': (req, res) => {
+        const appid = parseInt(req.params.appid);
+        const gameData = CACHE.get('games', { appid });
+
+        res.send(gameData[appid]);
     }
 }
 
