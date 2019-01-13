@@ -58,7 +58,7 @@ async function getUserData(username) {
 const ROUTES = {
     '/user/:username': async function(req, res) {
         const { username } = req.params;
-        const sendError = msg => res.status(404).send(msg);
+        const sendError = error => res.status(404).send({ error });
 
         console.log('requiested', `/user/${username}`);
 
@@ -81,7 +81,7 @@ const ROUTES = {
             data: ownGames } = own;
 
         if (ownGamesErr || !ownGames) {
-            sendError({ error: 'Error request user own games.'});
+            sendError('Error request user own games.');
             return;
         }
 

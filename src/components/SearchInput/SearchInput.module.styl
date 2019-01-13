@@ -1,28 +1,37 @@
 .SearchInput
     display flex
     align-items center
-    font-family 'Play-Regular'
     border-radius 3px
+    width 100%
+    width 100%
     border 2px solid rgba(0,0,0,.9)
-    transition box-shadow .2s ease-out
+    box-sizing border-box
+    background-color rgba(255,255,255,.9)
+    font-family 'Play-Regular'
+    transition .2s ease-out
+    transition-property transform, background-color
 
     &_focused
-        box-shadow 0 0 50px rgba(0,0,0,.2)
+        transform scale(1.005)
+        // box-shadow 0 0 50px rgba(0,0,0,.2)
+        background-color #fff
 
     &__input
     &__button
         appearance none
         height 50px
+        width 100%
         padding 0 8px
         box-sizing border-box
         border 0
         line-height 100%
         font-family 'Play-Regular'
-        font-size 30px
+        font-size 120%
         outline none
         wudth auto
 
     &__input
+        background-color transparent
         flex-grow 1
 
     &__button
@@ -34,9 +43,3 @@
 
         &:hover
             transform scale(1.1)
-
-    &__hint
-        height 20px
-        font-size 14px
-        color #ccc
-        background-color rgba(0,0,0,.7)

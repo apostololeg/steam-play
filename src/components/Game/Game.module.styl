@@ -2,21 +2,18 @@ outline(color)
     box-shadow inset 0 0 0 2px #000
 
 .Game
-    display inline-flex
-    margin 10px
+    display flex
+    margin 10px 5px
     border-radius 3px
     cursor pointer
 
     &__icon
         height 50px
         width 50px
+        min-width 50px
         z-index 1
         background-size 100%
         border-radius 5px
-
-    &:hover &__icon
-        border-top-right-radius 0
-        border-bottom-right-radius 0
 
     &__description
         display flex
@@ -27,12 +24,19 @@ outline(color)
         border-bottom-right-radius 3px
         transition box-shadow .1s ease-out
 
-    &_selected &__description
     &:hover &__description
-        background-color rgba(0,0,0,.1)
+        background-color rgba(0,0,0,.05)
 
-    &_selected &__description
-        outline(#000)
+    &_selected
+
+        &:hover
+        &__icon
+            border-top-right-radius 0
+            border-bottom-right-radius 0
+
+        &__description
+            background-color rgba(0,0,0,.1)
+            outline(#000)
 
     &__title
         font-family 'Play-Bold'

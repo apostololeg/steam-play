@@ -14,7 +14,7 @@ const { debug: DEBUG } = getSearchParams();
 class SearchInput extends Component {
     static propTypes = {
         styleNames: PropTypes.string,
-        // onRef: PropTypes.func,
+        onRef: PropTypes.func,
         onFocus: PropTypes.func,
         onBlur: PropTypes.func,
         onInput: PropTypes.func,
@@ -36,16 +36,16 @@ class SearchInput extends Component {
 
     @bind
     onRef(el) {
-        // const { onRef } = this.props;
+        const { onRef } = this.props;
 
         if (this.inputRef || !el) return;
 
         this.inputRef = el;
         this.inputRef.focus();
 
-        // if (onRef) {
-        //     onRef(el);
-        // }
+        if (onRef) {
+            onRef(el);
+        }
     }
 
     @bind
@@ -114,7 +114,7 @@ class SearchInput extends Component {
     }
 
     render() {
-        const { onSearch, onFocus, onBlur, ...props } = this.props;
+        const { onSearch, onFocus, onBlur, onRef, ...props } = this.props;
         const { showButtons, focused } = this.state;
 
         const styleNames = cn('SearchInput', {

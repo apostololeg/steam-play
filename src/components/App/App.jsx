@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react';
-import { bind } from 'decko';
+import { bind, debounce } from 'decko';
 import axios from 'axios';
+import cn from 'classnames';
 
 import getSearchParams from 'tools/getSearchParams';
 import cssModules from 'hoc/cssModules';
@@ -8,10 +9,11 @@ import SearchInput from 'components/SearchInput';
 import Game from 'components/Game';
 import User from 'components/User';
 import Spinner from 'components/Spinner';
+import Svg from 'components/Svg';
 import styles from './App.module.styl';
 
 const { debug: DEBUG } = getSearchParams();
-const COL_WIDTH = 200;
+const HEAD_HEIGHT = 180;
 const PAGE_STEP = DEBUG ? 2 : 10;
 
 function findCommonGames({ users, games }) {
@@ -99,6 +101,7 @@ class App extends Component {
             error: null,
             pageCount: 1,
             maxPlayTime: 0,
+            overscrolled: false
         };
     }
 
@@ -126,10 +129,37 @@ class App extends Component {
     }
 
     @bind
+    onRef(el) {
+        this.domElem = el;
+    }
+
+    @bind
+    onScroll(e) {
+        const { scrollTop } = this.domElem;
+        const { overscrolled } = this.state;
+
+        if (overscrolled) {
+            if (scrollTop < HEAD_HEIGHT) {
+                this.setState({ overscrolled: false });
+            }
+        } else {
+            if (scrollTop > HEAD_HEIGHT) {
+                this.setState({ overscrolled: true });
+            }
+        }
+    }
+
+    @bind
     onSearchInput(value) {
         const { users } = this.state;
 
         this.setState({ error: null, loading: false });
+    }
+
+    @bind
+    onFloatSearch() {
+        this.domElem.scrollTo(0, 0);
+        this.searchField.focus();
     }
 
     @bind
@@ -157,15 +187,14 @@ class App extends Component {
                 this.saveUserData(username, data, { loading: false });
             })
             .catch(({ response, message }) => {
-                const { data } = response;
-
-                if (data) {
-                    err(typeof data === 'string' ? data : data.error);
+                if (message) {
+                    err(message);
                     return;
                 }
 
-                err(message);
-                console.error(error);
+                const data = Object(response.data);
+
+                err(data.error || data);
             });
     }
 
@@ -175,23 +204,24 @@ class App extends Component {
     }
 
     @bind
-    deleteUser(username) {
+    deleteUser(userName) {
         const { users } = this.state;
 
-        delete users[username];
+        delete users[userName];
 
         this.setState({
             users,
+            error: null,
             ...updateCommonGames({ ...this.state, users })
         });
     }
 
     @bind
-    toggleUser(steamid) {
+    toggleUser(userName) {
         const { selectedUser } = this.state;
 
-        if (selectedUser !== steamid) {
-            this.setState({ selectedUser: steamid });
+        if (selectedUser !== userName) {
+            this.setState({ selectedUser: userName });
             return
         }
 
@@ -210,79 +240,154 @@ class App extends Component {
         this.setState({ selectedGame: null });
     }
 
+    getGamesOwnerName() {
+        const { users, selectedUser } = this.state;
+        const usersData = Object.values(users);
+        const s = name => `${name}'s`;
+
+        if (selectedUser) {
+            return s(users[selectedUser].personaname);
+        }
+
+        if (usersData.length === 1) {
+            return s(usersData[0].personaname);
+        }
+
+        return 'Common';
+    }
+
+    getGamesSubtitle() {
+        const { games, users } = this.state;
+
+        const gamesCount = Object.keys(games).length;
+
+        return `${this.getGamesOwnerName()} games – ${gamesCount}`;
+
+    }
+
+    renderSearch() {
+        const { loading, error, overscrolled } = this.state;
+        const floatClasses = cn(
+            styles['App__search-float'],
+            overscrolled && styles['App__search-float_visible']
+        );
+
+        return <div styleName="App__search">
+            <div styleName="App__search-controls">
+                <SearchInput
+                    placeholder="@username"
+                    defaultValue={DEBUG ? "molotoko" : ""}
+                    onInput={this.onSearchInput}
+                    onSearch={this.onSearch}
+                    onRef={el => this.searchField = el}
+                />
+                {loading && <div styleName="App__spinner">
+                    <Spinner  height={50} width={50} />
+                </div>}
+            </div>
+            {error && <div styleName="App__error">{error}</div>}
+            <div className={floatClasses}>
+                <Svg name="search" onClick={this.onFloatSearch} />
+            </div>
+        </div>;
+    }
+
+    renderUsersList() {
+        const { users, selectedUser } = this.state;
+        const usersList = Object.values(users);
+
+        if (usersList.length === 0) {
+            return null;
+        }
+
+        return <Fragment>
+            <div styleName="App__subtitle">Team</div>
+            <div styleName="App__users">
+                {usersList.map(data => {
+                    const { username } = data;
+
+                    return (
+                        <div styleName="App__user" key={username}>
+                            <User data={data}
+                                selected={selectedUser === username}
+                                onClick={() => this.toggleUser(username)}
+                                onDelete={() => this.deleteUser(username)}
+                            />
+                            <div styleName="App__user-playtime" />
+                        </div>
+                    );
+                })}
+            </div>
+        </Fragment>
+    }
+
     renderGames() {
-        const { games, pageCount, selectedGame } = this.state;
-        const gamesList = Object.values(games);
+        const { games, users, pageCount, selectedGame, selectedUser } = this.state;
+
+        if (Object.keys(users).length === 0) {
+            return null;
+        }
+
+        const gamesList = Object.values(selectedUser ? users[selectedUser].games : games);
         const list = gamesList.slice(0, pageCount * PAGE_STEP);
         const showMore = list.length < gamesList.length;
+        const owner = this.getGamesOwnerName();
 
-        return <div styleName="App__games">
-            {list.map(data => {
-                const { appid } = data;
+        return <Fragment>
+            <div styleName="App__subtitle">
+                {owner} games – {gamesList.length}
+            </div>
+            <div styleName="App__games">
+                {list.length > 0 && list.map(data => {
+                    const { appid } = data;
 
-                return <Game styleName="App__game"
-                    data={data}
-                    selected={selectedGame === appid}
-                    onClick={() => this.toggleGame(appid)}
-                    key={appid}
-                 />;
-            })}
-            {showMore &&
-                <div styleName="App__more" onClick={this.onClickMore}>
-                    more games...
-                </div>}
-        </div>
+                    return <Game styleName="App__game"
+                        data={data}
+                        selected={selectedGame === appid}
+                        onClick={() => this.toggleGame(appid)}
+                        key={appid}
+                     />;
+                })}
+                {showMore &&
+                    <div styleName="App__more" onClick={this.onClickMore}>
+                        more games...
+                    </div>
+                }
+            </div>
+        </Fragment>
     }
 
     render() {
-        const {
-            loading,
-            error,
-            users,
-            games,
-            maxPlayTime,
-            selectedUser } = this.state;
-        const gamesCount = Object.keys(games).length;
+        const { overscrolled } = this.state;
+        const usersSectionClasses = cn(
+            styles.App__section,
+            styles.App__section_users,
+            overscrolled && styles['App__section_border-bottom']
+        );
 
-        return <div styleName="App">
-            <h1 styleName="App__title">Find games and play together</h1>
-
-            <div styleName="App__header">
-                <div styleName="App__search">
-                    <SearchInput
-                        placeholder="@username"
-                        defaultValue={DEBUG ? "molotoko" : ""}
-                        onInput={this.onSearchInput}
-                        onSearch={this.onSearch}
-                    />
-                    {loading && <Spinner styleName="App__spinner"
-                        height={50}
-                        width={50}
-                    />}
-                    {error && <div styleName="App__error">{error}</div>}
-                </div>
-                <div styleName="App__users">
-                    {Object.values(users).map(data => {
-                        const { steamid, username } = data;
-
-                        return (
-                            <div styleName="App__user" key={username}>
-                                <User data={data}
-                                    selected={selectedUser === steamid}
-                                    onClick={() => this.toggleUser(steamid)}
-                                    onDelete={() => this.deleteUser(username)}
-                                />
-                                <div styleName="App__user-playtime" />
-                            </div>
-                        );
-                    })}
+        return <div styleName="App" onScroll={this.onScroll} ref={this.onRef}>
+            <div styleName="App__section App__section_header">
+                <div styleName="App__content">
+                    <h1 styleName="App__title">
+                        Find games and play together
+                    </h1>
                 </div>
             </div>
-
-            {!!gamesCount && <div styleName="App__games-count">
-                Games found – {gamesCount}
-            </div>}
-            {this.renderGames()}
+            <div styleName="App__section App__section_search">
+                <div styleName="App__content">
+                    {this.renderSearch()}
+                </div>
+            </div>
+            <div className={usersSectionClasses}>
+                <div styleName="App__content">
+                    {this.renderUsersList()}
+                </div>
+            </div>
+            <div styleName="App__section App__section_games">
+                <div styleName="App__content">
+                    {this.renderGames()}
+                </div>
+            </div>
         </div>;
     }
 }
