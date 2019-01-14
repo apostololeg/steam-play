@@ -89,7 +89,7 @@
     &__users
         display flex
         overflow-x auto
-        padding-top 2px
+        padding-top 4px
 
     &__user
         position relative
@@ -97,13 +97,17 @@
         max-width 50px
         margin 5px 10px 5px 5px
 
-        &-playtime // TODO: still not implemented :)
-            pointer-events none
+        &-playtime
             position absolute
             left 0
             top 0
             height 100%
             width 100%
+            transition clip .2s ease-out
+            pointer-events none
+            background-color rgba(30, 200, 30, .7)
+            border-radius 50%
+            transform rotateZ(180deg)
 
     &__more
         display inline-flex

@@ -15,6 +15,7 @@ import styles from './App.module.styl';
 const { debug: DEBUG } = getSearchParams();
 const HEAD_HEIGHT = 180;
 const PAGE_STEP = DEBUG ? 2 : 10;
+const ICON_HEIGHT = 50;
 
 function findCommonGames({ users, games }) {
     const usersNames = Object.keys(users);
@@ -135,6 +136,7 @@ class App extends Component {
             ...updateCommonGames({ ...state, games }, data),
             selectedGame: null,
             selectedUser: null,
+            maxPlayTime: 0,
             pageCount: 1
         });
         // TODO: Save state to LocalStorage!
@@ -219,8 +221,11 @@ class App extends Component {
 
         delete users[userName];
 
+        const maxPlayTime = this.updateMaxPlayTime({ users });
+
         this.setState({
             users,
+            maxPlayTime,
             error: null,
             ...updateCommonGames({ ...this.state, users })
         });
@@ -228,26 +233,22 @@ class App extends Component {
 
     @bind
     toggleUser(userName) {
-        const { selectedUser } = this.state;
+        const selectedUser = this.state.selectedUser !== userName
+            ? userName
+            : null;
+        const maxPlayTime = this.updateMaxPlayTime({ selectedUser });
 
-        if (selectedUser !== userName) {
-            this.setState({ selectedUser: userName });
-            return
-        }
-
-        this.setState({ selectedUser: null });
+        this.setState({ selectedUser, maxPlayTime });
     }
 
     @bind
     toggleGame(appid) {
-        const { selectedGame } = this.state;
+        const selectedGame = this.state.selectedGame !== appid
+            ? appid
+            : null;
+        const maxPlayTime = this.updateMaxPlayTime({ selectedGame });
 
-        if (selectedGame !== appid) {
-            this.setState({ selectedGame: appid });
-            return
-        }
-
-        this.setState({ selectedGame: null });
+        this.setState({ selectedGame, maxPlayTime });
     }
 
     getGamesOwnerName() {
@@ -268,11 +269,33 @@ class App extends Component {
 
     getGamesSubtitle() {
         const { games, users } = this.state;
-
         const gamesCount = Object.keys(games).length;
 
         return `${this.getGamesOwnerName()} games – ${gamesCount}`;
 
+    }
+
+    updateMaxPlayTime(statePatch) {
+        const {
+            users,
+            selectedUser,
+            selectedGame } = { ...this.state, ...statePatch };
+        const usersList = Object.values(users);
+
+        if (!selectedGame || selectedUser || usersList.length < 2) {
+            return 0;
+        }
+
+        return Object.values(users).reduce((acc, user) =>
+            {
+                if (!user.games) {
+                    console.error('User has no games ?', user);
+                    return acc;
+                }
+
+                return Math.max(acc, user.games[selectedGame].playTime)
+            }
+        , 0);
     }
 
     renderSearch() {
@@ -292,7 +315,7 @@ class App extends Component {
                     onRef={el => this.searchField = el}
                 />
                 {loading && <div styleName="App__spinner">
-                    <Spinner  height={50} width={50} />
+                    <Spinner  height={ICON_HEIGHT} width={ICON_HEIGHT} />
                 </div>}
             </div>
             {error && <div styleName="App__error">{error}</div>}
@@ -303,7 +326,7 @@ class App extends Component {
     }
 
     renderUsersList() {
-        const { users, selectedUser } = this.state;
+        const { users, selectedUser, selectedGame, maxPlayTime } = this.state;
         const usersList = Object.values(users);
 
         if (usersList.length === 0) {
@@ -314,7 +337,11 @@ class App extends Component {
             <div styleName="App__subtitle">Team</div>
             <div styleName="App__users">
                 {usersList.map(data => {
-                    const { userName } = data;
+                    const { userName, games } = data;
+                    const ratio = maxPlayTime
+                        ? games[selectedGame].playTime / maxPlayTime
+                        : 0;
+                    const clip = `rect(0, 50px, ${ICON_HEIGHT * ratio}px, 0)`;
 
                     return (
                         <div styleName="App__user" key={userName}>
@@ -323,7 +350,8 @@ class App extends Component {
                                 onClick={() => this.toggleUser(userName)}
                                 onDelete={() => this.deleteUser(userName)}
                             />
-                            <div styleName="App__user-playtime" />
+                            <div styleName="App__user-playtime"
+                                style={{ clip }}/>
                         </div>
                     );
                 })}
